@@ -1,37 +1,32 @@
 provider "aws" {
-  alias  = "us-east-1"
-  region = "us-east-1"
+  region = "us-east-1"  # You can modify to your preferred region
 }
 
-provider "aws" {
-  alias  = "us-west-2"
-  region = "us-west-2"
-}
-
-variable "regions" {
-  default = ["us-east-1", "us-west-2"]
+variable "azs" {
+  default = ["us-east-1a", "us-east-1b"]
 }
 
 resource "aws_vpc" "vpc" {
-  for_each   = toset(var.regions)
-  provider   = aws.${each.key}
   cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "my-vpc"
+  }
 }
 
 resource "aws_subnet" "subnet" {
-  for_each           = aws_vpc.vpc
-  provider           = aws.${each.key}
-  vpc_id             = each.value.id
-  cidr_block         = "10.0.1.0/24"
-  availability_zone  = "${each.key}a"
+  for_each          = toset(var.azs)
+  vpc_id            = aws_vpc.vpc.id
+  cidr_block        = cidrsubnet(aws_vpc.vpc.cidr_block, 8, each.key == "us-east-1a" ? 1 : 2)
+  availability_zone = each.key
+  tags = {
+    Name = "subnet-${each.key}"
+  }
 }
 
 resource "aws_security_group" "lb_sg" {
-  for_each    = aws_vpc.vpc
-  provider    = aws.${each.key}
-  name        = "lb_sg-${each.key}"
+  vpc_id = aws_vpc.vpc.id
+  name   = "lb_sg"
   description = "Allow web traffic"
-  vpc_id      = each.value.id
 
   ingress {
     from_port   = 80
@@ -46,36 +41,47 @@ resource "aws_security_group" "lb_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "lb-sg"
+  }
 }
 
 resource "aws_lb" "app_lb" {
-  for_each            = aws_vpc.vpc
-  provider            = aws.${each.key}
-  name                = "app-lb-${each.key}"
-  internal            = false
-  load_balancer_type  = "application"
-  security_groups     = [aws_security_group.lb_sg[each.key].id]
-  subnets             = [aws_subnet.subnet[each.key].id]
+  name               = "app-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.lb_sg.id]
+  subnets            = [for subnet in aws_subnet.subnet : subnet.id]
+
+  tags = {
+    Name = "app-lb"
+  }
 }
 
 resource "aws_launch_configuration" "app_lc" {
-  for_each      = aws_vpc.vpc
-  provider      = aws.${each.key}
-  name          = "app-lc-${each.key}"
-  image_id      = "ami-12345678" # Update with a valid AMI ID
+  name          = "app-lc"
+  image_id      = "ami-12345678"  # Replace with valid AMI ID
   instance_type = "t2.micro"
 }
 
 resource "aws_autoscaling_group" "asg" {
-  for_each              = aws_vpc.vpc
-  provider              = aws.${each.key}
-  desired_capacity      = 2
-  max_size              = 2
-  min_size              = 2
-  vpc_zone_identifier   = [aws_subnet.subnet[each.key].id]
-  launch_configuration  = aws_launch_configuration.app_lc[each.key].id
+  vpc_zone_identifier = [for subnet in aws_subnet.subnet : subnet.id]
+  launch_configuration = aws_launch_configuration.app_lc.id
+  desired_capacity     = 2
+  max_size             = 2
+  min_size             = 2
+
+  tags = [
+    {
+      key                 = "Name"
+      value               = "app-instance"
+      propagate_at_launch = true
+    }
+  ]
 }
 
-output "lb_dns" {
-  value = aws_lb.app_lb[*].dns_name
+output "load_balancer_dns" {
+  value = aws_lb.app_lb.dns_name
 }
+
