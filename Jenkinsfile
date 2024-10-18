@@ -9,7 +9,7 @@ pipeline {
         stage('Git Checkout') {
             steps {
                 // Checkout the Terraform code from GitHub
-                git branch: 'main', url: 'https://github.com/Sona-Yadav/Terraform.git'
+                git branch: 'main', url: 'https://github.com/Sona-Yadav/Terraform-new-project-jenkins.git'
             }
         }
         
