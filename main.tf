@@ -58,6 +58,28 @@ resource "aws_lb" "app_lb" {
     Name = "app-lb"
   }
 }
+# Internet Gateway for the VPC
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.vpc.id
+}
+
+# Route table to make the subnet public
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+}
+
+# Associate subnets with the public route table
+resource "aws_route_table_association" "public_subnet_assoc" {
+  for_each       = aws_subnet.subnet
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
 
 resource "aws_launch_configuration" "app_lc" {
   name          = "app-lc"
