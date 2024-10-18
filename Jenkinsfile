@@ -2,22 +2,12 @@ pipeline {
     agent any
 
     environment {
-        AWS_CREDENTIALS = credentials('aws-access-key-id') // Update with your Jenkins credential ID for AWS
+        // Directly map credentials to AWS environment variables
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key-id') // Ensure this matches the correct Jenkins credentials ID for AWS
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-access-key') // Ensure this matches the correct Jenkins credentials ID for AWS
     }
 
     stages {
-        stage('Use AWS Credentials') {
-            steps {
-                script {
-                    // Parse AWS credentials and set them as environment variables
-                    def awsCreds = readJSON text: AWS_CREDENTIALS
-                    env.AWS_ACCESS_KEY_ID = awsCreds.AWS_ACCESS_KEY_ID
-                    env.AWS_SECRET_ACCESS_KEY = awsCreds.AWS_SECRET_ACCESS_KEY
-                }
-                // These environment variables (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) can now be used in the steps below.
-            }
-        }
-
         stage('Git Checkout') {
             steps {
                 // Checkout the Terraform code from GitHub
