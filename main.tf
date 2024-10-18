@@ -58,6 +58,7 @@ resource "aws_lb" "app_lb" {
     Name = "app-lb"
   }
 }
+
 # Internet Gateway for the VPC
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.vpc.id
@@ -80,20 +81,39 @@ resource "aws_route_table_association" "public_subnet_assoc" {
   route_table_id = aws_route_table.public_rt.id
 }
 
-
-resource "aws_launch_configuration" "app_lc" {
-  name          = "app-lc"
-  image_id      = "ami-12345678"  # Replace with valid AMI ID
+# Replace aws_launch_configuration with aws_launch_template
+resource "aws_launch_template" "app_lt" {
+  name_prefix   = "app-lt"
+  image_id      = "ami-0c55b159cbfafe1f0"  # Replace with a valid AMI ID
   instance_type = "t2.micro"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "app-instance"
+    }
+  }
 }
 
 resource "aws_autoscaling_group" "asg" {
   vpc_zone_identifier = [for subnet in aws_subnet.subnet : subnet.id]
-  launch_configuration = aws_launch_configuration.app_lc.id
+  launch_template {
+    id      = aws_launch_template.app_lt.id
+    version = "$Latest"
+  }
   desired_capacity     = 2
   max_size             = 2
   min_size             = 2
 
+  tag {
+    key                 = "Name"
+    value               = "app-instance"
+    propagate_at_launch = true
+  }
 }
 
 output "load_balancer_dns" {
