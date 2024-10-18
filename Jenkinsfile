@@ -6,6 +6,19 @@ pipeline {
     }
 
     stages {
+        stage('Use AWS Credentials') {
+            steps {
+                script {
+                    def awsCreds = readJSON text: AWS_CREDENTIALS
+                    env.AWS_ACCESS_KEY_ID = awsCreds.AWS_ACCESS_KEY_ID
+                    env.AWS_SECRET_ACCESS_KEY = awsCreds.AWS_SECRET_ACCESS_KEY
+                }
+                // Use env.AWS_ACCESS_KEY_ID and env.AWS_SECRET_ACCESS_KEY in your steps
+            }
+        }
+    }
+
+    stages {
         stage('Git Checkout') {
             steps {
                 // Checkout the Terraform code from GitHub
