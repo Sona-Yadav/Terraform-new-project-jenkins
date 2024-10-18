@@ -50,10 +50,10 @@ pipeline {
         }
     }
 
-    post {
-        always {
+    //post {
+       // always {
             // Clean up the workspace after the pipeline finishes
-            cleanWs()
-        }
-    }
+         //   cleanWs()
+      //  }
+   // }
 }
