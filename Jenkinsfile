@@ -9,16 +9,15 @@ pipeline {
         stage('Use AWS Credentials') {
             steps {
                 script {
+                    // Parse AWS credentials and set them as environment variables
                     def awsCreds = readJSON text: AWS_CREDENTIALS
                     env.AWS_ACCESS_KEY_ID = awsCreds.AWS_ACCESS_KEY_ID
                     env.AWS_SECRET_ACCESS_KEY = awsCreds.AWS_SECRET_ACCESS_KEY
                 }
-                // Use env.AWS_ACCESS_KEY_ID and env.AWS_SECRET_ACCESS_KEY in your steps
+                // These environment variables (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) can now be used in the steps below.
             }
         }
-    }
 
-    stages {
         stage('Git Checkout') {
             steps {
                 // Checkout the Terraform code from GitHub
@@ -61,10 +60,10 @@ pipeline {
         }
     }
 
-    // post {
-    //     always {
-    //         // Clean up the workspace after the pipeline finishes
-    //         cleanWs()
-    //     }
-    // }
+    post {
+        always {
+            // Clean up the workspace after the pipeline finishes
+            cleanWs()
+        }
+    }
 }
