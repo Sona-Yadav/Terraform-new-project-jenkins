@@ -84,7 +84,7 @@ resource "aws_route_table_association" "public_subnet_assoc" {
 # Replace aws_launch_configuration with aws_launch_template
 resource "aws_launch_template" "app_lt" {
   name_prefix   = "app-lt"
-  image_id      = "ami-0c55b159cbfafe1f0"  # Replace with a valid AMI ID
+  image_name      = "ubuntu"  # Replace with a valid AMI ID
   instance_type = "t2.micro"
 
   lifecycle {
