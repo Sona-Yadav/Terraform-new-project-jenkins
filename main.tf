@@ -72,13 +72,7 @@ resource "aws_autoscaling_group" "asg" {
   max_size             = 2
   min_size             = 2
 
-  tags = [
-    {
-      key                 = "Name"
-      value               = "app-instance"
-      propagate_at_launch = true
-    }
-  ]
+  
 }
 
 output "load_balancer_dns" {
